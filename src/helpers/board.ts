@@ -46,7 +46,7 @@ function checkIfCollisionExists(
   return collision;
 }
 
-function mergePieceToBoard(piece: Piece, board: Board): Board {
+function mergePieceToBoard(piece: Piece, board: Board) {
   const newBoard = board.map((row) => row.map((cell) => ({ ...cell })));
   for (let i = 0; i < piece.projectionCoords.length; i++) {
     const coord = piece.projectionCoords[i];
@@ -61,7 +61,7 @@ function mergePieceToBoard(piece: Piece, board: Board): Board {
 
 function deleteFullRows(board: Board) {
   const newBoard: Board = [];
-  let nDeletedRows = 0;
+  let linesCleared = 0;
 
   for (let y = Settings.HEIGHT - 1; y >= 0; y--) {
     const row = board[y];
@@ -75,17 +75,17 @@ function deleteFullRows(board: Board) {
       }
     }
 
-    if (rowCompleted) nDeletedRows++;
+    if (rowCompleted) linesCleared++;
     else newBoard.unshift(row);
   }
 
-  for (let i = 0; i < nDeletedRows; i++) {
+  for (let i = 0; i < linesCleared; i++) {
     newBoard.unshift(
       Array.from(Array(Settings.WIDTH)).map(() => ({ isEmpty: true })),
     );
   }
 
-  return newBoard;
+  return { newBoard, linesCleared };
 }
 
 const BoardHelper = {

@@ -20,6 +20,12 @@ export interface Piece {
 
 export type Move = "right" | "left" | "softDrop" | "hardDrop" | "rotate";
 
+interface MovementResult {
+  board: Board;
+  piece: Piece;
+  linesCleared: number;
+}
+
 function generateNewPiece(board: Board): Piece {
   const type = getRandomItem(PIECE_TYPES);
   const coordinates = generateShape(type);
@@ -113,7 +119,7 @@ function generateShape(type: Piece["type"]) {
   return [{ x: xCenter, y: 0 }];
 }
 
-function movePiece(piece: Piece, move: Move, board: Board) {
+function movePiece(piece: Piece, move: Move, board: Board): MovementResult {
   if (move === "softDrop") return movePieceDown(piece, board);
   if (move === "hardDrop") return dropPiece(piece, board);
   if (move === "rotate") return rotatePiece(piece, board);
@@ -134,11 +140,15 @@ function movePieceDown(piece: Piece, board: Board) {
   );
 
   if (collisionExists) {
-    const newBoard = BoardHelper.mergePieceToBoard(piece, board);
+    const { newBoard, linesCleared } = BoardHelper.mergePieceToBoard(
+      piece,
+      board,
+    );
+
     return {
       board: newBoard,
-      collision: true,
       piece: generateNewPiece(newBoard),
+      linesCleared,
     };
   }
 
@@ -146,12 +156,12 @@ function movePieceDown(piece: Piece, board: Board) {
 
   return {
     board,
-    collision: false,
     piece: {
       ...piece,
       coordinates: postMoveCoordinates,
       center: postMoveCenter,
     },
+    linesCleared: 0,
   };
 }
 
@@ -179,28 +189,31 @@ function movePieceToSides(piece: Piece, move: "left" | "right", board: Board) {
 
   return {
     board,
-    collision: false,
     piece: {
       ...piece,
       coordinates: collisionExists ? coordinates : postMoveCoordinates,
       center: postMoveCenter,
       projectionCoords: postRotationProjection,
     },
+    linesCleared: 0,
   };
 }
 
 function dropPiece(piece: Piece, board: Board) {
-  const newBoard = BoardHelper.mergePieceToBoard(piece, board);
+  const { newBoard, linesCleared } = BoardHelper.mergePieceToBoard(
+    piece,
+    board,
+  );
 
   return {
     board: newBoard,
-    collision: true,
     piece: generateNewPiece(newBoard),
+    linesCleared,
   };
 }
 
 function rotatePiece(piece: Piece, board: Board) {
-  if (piece.type === "O") return { board, collision: false, piece };
+  if (piece.type === "O") return { board, piece, linesCleared: 0 };
 
   const { coordinates, center } = piece;
 
@@ -220,12 +233,12 @@ function rotatePiece(piece: Piece, board: Board) {
 
   return {
     board,
-    collision: false,
     piece: {
       ...piece,
       coordinates: collisionExists ? coordinates : postRotationCoordinates,
       projectionCoords: postRotationProjection,
     },
+    linesCleared: 0,
   };
 }
 

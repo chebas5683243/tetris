@@ -5,9 +5,11 @@ import { create } from "zustand";
 interface GameState {
   board: Board;
   piece: Piece;
-  points: number;
+  score: number;
   level: number;
   lines: number;
+  isGameOver: boolean;
+  speed: number;
 }
 
 interface GameStore extends Partial<GameState> {
@@ -23,26 +25,43 @@ export const useGameStore = create<GameStore>((set) => ({
     set({
       board,
       piece,
-      points: 0,
-      level: 0,
+      score: 0,
+      level: 1,
       lines: 0,
+      isGameOver: false,
+      speed: 1000,
     });
   },
+
   movePiece: (move: Move) => {
     set((state) => {
-      const { piece, board } = state;
+      const { piece, board, lines } = state;
 
-      if (!piece || !board) return state;
+      if (piece === undefined || board === undefined || lines === undefined)
+        return state;
 
-      const { board: newBoard, piece: newPiece } = PieceHelper.movePiece(
-        piece,
-        move,
-        board,
+      const {
+        board: newBoard,
+        piece: newPiece,
+        linesCleared,
+      } = PieceHelper.movePiece(piece, move, board);
+
+      const isGameOver = BoardHelper.checkIfCollisionExists(
+        newPiece.coordinates,
+        newBoard,
       );
+
+      const newLines = lines + linesCleared;
+      const level = Math.floor(newLines / 10) + 1;
+      const speed = Math.max(1000 - (level - 1) * 50, 100);
 
       return {
         board: newBoard,
         piece: newPiece,
+        isGameOver,
+        lines: lines + linesCleared,
+        level,
+        speed,
       };
     });
   },

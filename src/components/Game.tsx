@@ -2,23 +2,21 @@ import Settings from "@/config/settings";
 import { KeyboardEvent, useEffect } from "react";
 import { Block } from "./Block";
 import { useGameStore } from "@/store/game";
+import { PlayButton } from "./PlayButton";
 
-export function Game() {
-  const { piece, board, movePiece } = useGameStore();
-
-  console.log(piece?.projectionCoords);
+export function Board() {
+  const { piece, board, speed, movePiece, lines, isGameOver } = useGameStore();
 
   useEffect(() => {
-    function gameLoop() {
-      movePiece("softDrop");
-    }
+    if (isGameOver) return;
+    if (!speed) return;
 
-    const intervalId = setInterval(() => gameLoop(), 1000);
+    const intervalId = setInterval(() => movePiece("softDrop"), speed);
 
     return () => {
       clearInterval(intervalId);
     };
-  }, [movePiece]);
+  }, [movePiece, speed, lines, isGameOver]);
 
   function handleMove(event: KeyboardEvent) {
     const { code } = event;
@@ -32,7 +30,7 @@ export function Game() {
 
   return (
     <div
-      className="border-4 border-gray-500 w-fit"
+      className="relative border-4 border-gray-500 w-fit"
       onKeyDown={handleMove}
       tabIndex={0}
     >
@@ -41,22 +39,24 @@ export function Game() {
           {Array.from(Array(Settings.WIDTH)).map((_, x) => {
             const id = y * Settings.WIDTH + x;
 
-            let color = board![y][x].color;
+            if (!board || !piece) return <Block key={id} id={id} />;
+
+            let color = board[y][x].color;
             let isProjection = false;
 
             if (!color) {
               let outsidePiece = true;
-              piece!.coordinates.forEach((coord) => {
+              piece.coordinates.forEach((coord) => {
                 if (coord.x === x && coord.y === y) {
                   outsidePiece = false;
-                  color = piece!.color;
+                  color = piece.color;
                 }
               });
 
               if (outsidePiece) {
-                piece!.projectionCoords.forEach((coord) => {
+                piece.projectionCoords.forEach((coord) => {
                   if (coord.x === x && coord.y === y) {
-                    color = piece!.color;
+                    color = piece.color;
                     isProjection = true;
                   }
                 });
@@ -74,6 +74,7 @@ export function Game() {
           })}
         </div>
       ))}
+      <PlayButton />
     </div>
   );
 }

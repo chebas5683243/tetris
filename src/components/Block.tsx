@@ -3,7 +3,7 @@ import { cn } from "@/utils";
 interface Props {
   id: number;
   color?: string;
-  isProjection: boolean;
+  isProjection?: boolean;
 }
 
 export function Block({ id, color = "gray", isProjection }: Props) {
