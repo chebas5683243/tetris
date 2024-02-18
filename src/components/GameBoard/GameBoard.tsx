@@ -1,11 +1,11 @@
 import Settings from "@/config/settings";
-import { KeyboardEvent, useEffect } from "react";
-import { Block } from "./Block";
+import { useEffect } from "react";
 import { useGameStore } from "@/store/game";
-import { PlayButton } from "./PlayButton";
+import { Block } from "../Block";
+import { BoardOverlay } from "./BoardOverlay";
 
-export function Board() {
-  const { piece, board, speed, movePiece, lines, isGameOver } = useGameStore();
+export function GameBoard() {
+  const { piece, board, speed, movePiece, isGameOver } = useGameStore();
 
   useEffect(() => {
     if (isGameOver) return;
@@ -16,24 +16,10 @@ export function Board() {
     return () => {
       clearInterval(intervalId);
     };
-  }, [movePiece, speed, lines, isGameOver]);
-
-  function handleMove(event: KeyboardEvent) {
-    const { code } = event;
-
-    if (code === "ArrowUp") movePiece("rotate");
-    if (code === "Space") movePiece("hardDrop");
-    if (code === "ArrowLeft") movePiece("left");
-    if (code === "ArrowRight") movePiece("right");
-    if (code === "ArrowDown") movePiece("softDrop");
-  }
+  }, [movePiece, speed, isGameOver]);
 
   return (
-    <div
-      className="relative border-4 border-gray-500 w-fit"
-      onKeyDown={handleMove}
-      tabIndex={0}
-    >
+    <div className="relative border border-gray-500 w-fit opacity-80">
       {Array.from(Array(Settings.HEIGHT)).map((_, y) => (
         <div className="flex" key={y}>
           {Array.from(Array(Settings.WIDTH)).map((_, x) => {
@@ -74,7 +60,7 @@ export function Board() {
           })}
         </div>
       ))}
-      <PlayButton />
+      <BoardOverlay />
     </div>
   );
 }

@@ -3,15 +3,16 @@ import { getRandomItem } from "@/utils";
 import BoardHelper, { Board } from "./board";
 
 const PIECE_TYPES = ["O", "T", "I", "S", "Z", "J", "L"] as const;
-const Colors = ["red", "green", "blue", "yellow"];
 
 interface Coordinate {
   x: number;
   y: number;
 }
 
+export type PieceType = (typeof PIECE_TYPES)[number];
+
 export interface Piece {
-  type: (typeof PIECE_TYPES)[number];
+  type: PieceType;
   color: string;
   center: Coordinate;
   coordinates: Coordinate[];
@@ -22,25 +23,29 @@ export type Move = "right" | "left" | "softDrop" | "hardDrop" | "rotate";
 
 interface MovementResult {
   board: Board;
-  piece: Piece;
+  piece?: Piece;
   linesCleared: number;
 }
 
-function generateNewPiece(board: Board): Piece {
-  const type = getRandomItem(PIECE_TYPES);
+function generateNewPiece(board: Board, pieceType?: PieceType): Piece {
+  const type = pieceType ? pieceType : getRandomShape();
   const coordinates = generateShape(type);
   const projectionCoords = getProjectionCoords(coordinates, board);
 
   return {
     type,
-    color: getRandomItem(Colors),
+    color: getTypeColor(type),
     center: getCenter(type),
     coordinates,
     projectionCoords,
   };
 }
 
-function getCenter(type: Piece["type"]): Coordinate {
+function getRandomShape() {
+  return getRandomItem(PIECE_TYPES);
+}
+
+function getCenter(type: PieceType): Coordinate {
   const xCenter = Math.floor(Settings.WIDTH / 2);
 
   if (type === "I" || type === "J" || type === "T" || type === "L") {
@@ -50,7 +55,7 @@ function getCenter(type: Piece["type"]): Coordinate {
   return { x: xCenter, y: 0 };
 }
 
-function generateShape(type: Piece["type"]) {
+function generateShape(type: PieceType) {
   const xCenter = Math.floor(Settings.WIDTH / 2);
 
   if (type === "I") {
@@ -119,6 +124,17 @@ function generateShape(type: Piece["type"]) {
   return [{ x: xCenter, y: 0 }];
 }
 
+function getTypeColor(type: PieceType) {
+  if (type === "I") return "cyan";
+  if (type === "J") return "blue";
+  if (type === "L") return "orange";
+  if (type === "S") return "green";
+  if (type === "Z") return "red";
+  if (type === "O") return "yellow";
+  if (type === "T") return "purple";
+  return "black";
+}
+
 function movePiece(piece: Piece, move: Move, board: Board): MovementResult {
   if (move === "softDrop") return movePieceDown(piece, board);
   if (move === "hardDrop") return dropPiece(piece, board);
@@ -147,7 +163,7 @@ function movePieceDown(piece: Piece, board: Board) {
 
     return {
       board: newBoard,
-      piece: generateNewPiece(newBoard),
+      piece: undefined,
       linesCleared,
     };
   }
@@ -207,7 +223,7 @@ function dropPiece(piece: Piece, board: Board) {
 
   return {
     board: newBoard,
-    piece: generateNewPiece(newBoard),
+    piece: undefined,
     linesCleared,
   };
 }
@@ -268,6 +284,9 @@ const PieceHelper = {
   generateNewPiece,
   movePiece,
   rotatePiece,
+  getRandomShape,
+  generateShape,
+  getTypeColor,
 };
 
 export default PieceHelper;

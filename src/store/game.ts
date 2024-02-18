@@ -1,5 +1,5 @@
 import BoardHelper, { Board } from "@/helpers/board";
-import PieceHelper, { Move, Piece } from "@/helpers/piece";
+import PieceHelper, { Move, Piece, PieceType } from "@/helpers/piece";
 import { create } from "zustand";
 
 interface GameState {
@@ -10,11 +10,14 @@ interface GameState {
   lines: number;
   isGameOver: boolean;
   speed: number;
+  nextShapes: PieceType[];
+  savedShape?: PieceType;
 }
 
 interface GameStore extends Partial<GameState> {
   start: () => void;
   movePiece: (move: Move) => void;
+  savePiece: () => void;
 }
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -30,38 +33,95 @@ export const useGameStore = create<GameStore>((set) => ({
       lines: 0,
       isGameOver: false,
       speed: 1000,
+      nextShapes: Array.from({ length: 3 }, () => PieceHelper.getRandomShape()),
+      savedShape: undefined,
     });
   },
 
   movePiece: (move: Move) => {
     set((state) => {
-      const { piece, board, lines } = state;
+      const { piece, board, lines, nextShapes } = state;
 
-      if (piece === undefined || board === undefined || lines === undefined)
+      if (
+        piece === undefined ||
+        board === undefined ||
+        lines === undefined ||
+        nextShapes === undefined
+      ) {
         return state;
+      }
 
-      const {
-        board: newBoard,
-        piece: newPiece,
-        linesCleared,
-      } = PieceHelper.movePiece(piece, move, board);
+      const postMoveState = PieceHelper.movePiece(piece, move, board);
+
+      const { board: postMoveBoard, linesCleared } = postMoveState;
+
+      let postMovePiece = postMoveState.piece;
+
+      if (postMovePiece) {
+        return {
+          ...state,
+          piece: postMovePiece,
+        };
+      }
+
+      const newNextShapes = [...nextShapes];
+      newNextShapes.push(PieceHelper.getRandomShape());
+
+      postMovePiece = PieceHelper.generateNewPiece(
+        postMoveBoard,
+        newNextShapes.shift(),
+      );
 
       const isGameOver = BoardHelper.checkIfCollisionExists(
-        newPiece.coordinates,
-        newBoard,
+        postMovePiece.coordinates,
+        postMoveBoard,
       );
 
       const newLines = lines + linesCleared;
       const level = Math.floor(newLines / 10) + 1;
-      const speed = Math.max(1000 - (level - 1) * 50, 100);
+      const speed = Math.max(1000 - (level - 1) * 75, 100);
 
       return {
-        board: newBoard,
-        piece: newPiece,
+        ...state,
+        board: postMoveBoard,
+        piece: postMovePiece,
+        nextShapes: newNextShapes,
         isGameOver,
         lines: lines + linesCleared,
         level,
         speed,
+      };
+    });
+  },
+
+  savePiece: () => {
+    set((state) => {
+      const { nextShapes, savedShape, piece, board } = state;
+
+      if (!piece || !nextShapes || !board) return state;
+
+      if (savedShape) {
+        return {
+          ...state,
+          savedShape: piece.type,
+          piece: PieceHelper.generateNewPiece(board, savedShape),
+        };
+      }
+
+      const newNextShapes = [...nextShapes];
+      newNextShapes.push(PieceHelper.getRandomShape());
+
+      const newSavedShape = piece.type;
+      const newPiece = PieceHelper.generateNewPiece(
+        board,
+        newNextShapes.shift(),
+      );
+
+      return {
+        ...state,
+        nextShapes: newNextShapes,
+        savedShape: newSavedShape,
+        piece: newPiece,
       };
     });
   },
